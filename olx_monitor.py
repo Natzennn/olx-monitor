@@ -12,7 +12,7 @@ TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 
 def notify(text):
-    requests.post(
+    response = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
         data={
             "chat_id": CHAT_ID,
@@ -21,6 +21,7 @@ def notify(text):
         },
         timeout=20,
     )
+    response.raise_for_status()
 
 def normalize_link(href):
     absolute = urljoin("https://www.olx.pl", href)
@@ -50,6 +51,7 @@ def get_offers():
         },
         timeout=30,
     )
+    response.raise_for_status()
 
     soup = BeautifulSoup(response.text, "html.parser")
     offers = []
@@ -63,13 +65,21 @@ def get_offers():
             continue
 
         seen_links.add(link)
-        offers.append({"title": title, "link": link})
+        offers.append({
+            "title": title,
+            "link": link,
+        })
 
     return offers[:30]
 
 def main():
     known_links = {offer["link"] for offer in get_offers()}
-    notify(f"✅ Monitor OLX uruchomiony. Aktualnie widzę {len(known_links)} ofert.")
+
+    notify(
+        "✅ Monitor OLX uruchomiony\n"
+        f"Obserwuję oferty: {OLX_URL}\n"
+        f"Aktualnie widzę {len(known_links)} ofert."
+    )
 
     while True:
         try:
@@ -80,14 +90,14 @@ def main():
                     continue
 
                 known_links.add(offer["link"])
-                notify(f"🆕 Nowa oferta pracy OLX:\n{offer['title']}\n{offer['link']}")
+
+                notify(
+                    "🆕 Nowa oferta pracy OLX\n\n"
+                    f"📌 {offer['title']}\n"
+                    f"🔗 {offer['link']}"
+                )
 
             print(f"Sprawdzono OLX. Ofert na stronie: {len(offers)}.", flush=True)
 
         except Exception as e:
-            print(f"Błąd OLX: {e}", flush=True)
-
-        time.sleep(CHECK_EVERY_SECONDS)
-
-if __name__ == "__main__":
-    main()
+            print(f"Błąd OLX:
