@@ -42,6 +42,10 @@ def extract_title(anchor):
 
     return clean_text(anchor.get_text(" ", strip=True))
 
+def is_today_offer(text):
+    lower = text.lower()
+    return "dzisiaj" in lower
+
 def get_offers():
     response = requests.get(
         OLX_URL,
@@ -60,14 +64,19 @@ def get_offers():
     for anchor in soup.select("a[href*='/oferta/']"):
         link = normalize_link(anchor["href"])
         title = extract_title(anchor)
+        full_text = clean_text(anchor.get_text(" ", strip=True))
 
         if not title or link in seen_links:
+            continue
+
+        if not is_today_offer(full_text):
             continue
 
         seen_links.add(link)
         offers.append({
             "title": title,
             "link": link,
+            "details": full_text,
         })
 
     return offers[:30]
@@ -77,8 +86,8 @@ def main():
 
     notify(
         "Monitor OLX uruchomiony\n"
-        f"Obserwuje oferty: {OLX_URL}\n"
-        f"Aktualnie widze {len(known_links)} ofert."
+        f"Obserwuje tylko oferty z dzisiaj.\n"
+        f"Aktualnie widze {len(known_links)} dzisiejszych ofert."
     )
 
     while True:
@@ -92,12 +101,12 @@ def main():
                 known_links.add(offer["link"])
 
                 notify(
-                    "Nowa oferta pracy OLX\n\n"
+                    "Nowa dzisiejsza oferta pracy OLX\n\n"
                     f"{offer['title']}\n"
                     f"{offer['link']}"
                 )
 
-            print(f"Sprawdzono OLX. Ofert na stronie: {len(offers)}.", flush=True)
+            print(f"Sprawdzono OLX. Dzisiejszych ofert: {len(offers)}.", flush=True)
 
         except Exception as e:
             print(f"Blad OLX: {e}", flush=True)
