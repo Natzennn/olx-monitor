@@ -76,9 +76,9 @@ def main():
     known_links = {offer["link"] for offer in get_offers()}
 
     notify(
-        "✅ Monitor OLX uruchomiony\n"
-        f"Obserwuję oferty: {OLX_URL}\n"
-        f"Aktualnie widzę {len(known_links)} ofert."
+        "Monitor OLX uruchomiony\n"
+        f"Obserwuje oferty: {OLX_URL}\n"
+        f"Aktualnie widze {len(known_links)} ofert."
     )
 
     while True:
@@ -92,12 +92,17 @@ def main():
                 known_links.add(offer["link"])
 
                 notify(
-                    "🆕 Nowa oferta pracy OLX\n\n"
-                    f"📌 {offer['title']}\n"
-                    f"🔗 {offer['link']}"
+                    "Nowa oferta pracy OLX\n\n"
+                    f"{offer['title']}\n"
+                    f"{offer['link']}"
                 )
 
             print(f"Sprawdzono OLX. Ofert na stronie: {len(offers)}.", flush=True)
 
         except Exception as e:
-            print(f"Błąd OLX:
+            print(f"Blad OLX: {e}", flush=True)
+
+        time.sleep(CHECK_EVERY_SECONDS)
+
+if __name__ == "__main__":
+    main()
