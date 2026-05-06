@@ -8,6 +8,20 @@ from bs4 import BeautifulSoup
 OLX_URL = "https://www.olx.pl/praca/finanse-ksiegowosc/warszawa/?search%5Bdist%5D=30"
 CHECK_EVERY_SECONDS = 60
 
+KEYWORDS = [
+    "analityk finansowy",
+    "analityk ds finansowych",
+    "analityk ds. finansowych",
+    "analityk finansowa",
+    "kontroler finansowy",
+    "kontroler biznesowy",
+    "financial analyst",
+    "finance analyst",
+    "business analyst",
+    "controller",
+    "controlling",
+]
+
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 CHAT_ID = os.environ["CHAT_ID"]
 
@@ -46,6 +60,10 @@ def is_today_offer(text):
     lower = text.lower()
     return "dzisiaj" in lower
 
+def is_wanted_offer(text):
+    lower = text.lower()
+    return any(keyword in lower for keyword in KEYWORDS)
+
 def get_offers():
     response = requests.get(
         OLX_URL,
@@ -72,6 +90,9 @@ def get_offers():
         if not is_today_offer(full_text):
             continue
 
+        if not is_wanted_offer(full_text):
+            continue
+
         seen_links.add(link)
         offers.append({
             "title": title,
@@ -86,8 +107,8 @@ def main():
 
     notify(
         "Monitor OLX uruchomiony\n"
-        f"Obserwuje tylko oferty z dzisiaj.\n"
-        f"Aktualnie widze {len(known_links)} dzisiejszych ofert."
+        "Obserwuje tylko dzisiejsze oferty: Analityk/Kontroler finansowy.\n"
+        f"Aktualnie widze {len(known_links)} pasujacych ofert."
     )
 
     while True:
@@ -101,12 +122,15 @@ def main():
                 known_links.add(offer["link"])
 
                 notify(
-                    "Nowa dzisiejsza oferta pracy OLX\n\n"
+                    "Nowa oferta OLX: Analityk/Kontroler finansowy\n\n"
                     f"{offer['title']}\n"
                     f"{offer['link']}"
                 )
 
-            print(f"Sprawdzono OLX. Dzisiejszych ofert: {len(offers)}.", flush=True)
+            print(
+                f"Sprawdzono OLX. Pasujacych dzisiejszych ofert: {len(offers)}.",
+                flush=True,
+            )
 
         except Exception as e:
             print(f"Blad OLX: {e}", flush=True)
